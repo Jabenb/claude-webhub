@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Claude Hub</title>
+  <link rel="icon" href="/icon.svg">
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <div class="app" id="app">
+    <aside class="side" id="side">
+      <a class="brand" href="#/">
+        <img src="/icon.svg" alt="" width="28" height="28">
+        <span class="brand-name">Claude Hub</span>
+        <span class="conn" id="conn" title=""></span>
+      </a>
+      <label class="search">
+        <svg viewBox="0 0 20 20" width="15" height="15" aria-hidden="true"><circle cx="9" cy="9" r="6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m14 14 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <input id="search" type="search" autocomplete="off">
+      </label>
+      <nav class="nav" id="nav"></nav>
+      <div class="side-foot">
+        <div class="seg" id="langs" role="group"></div>
+        <button class="icon-btn" id="theme" type="button"></button>
+      </div>
+    </aside>
+    <div class="scrim" id="scrim"></div>
+    <main class="main">
+      <section class="home" id="home"></section>
+      <section class="view" id="view" hidden>
+        <header class="bar">
+          <button class="icon-btn burger" id="burger" type="button" aria-label="menu">☰</button>
+          <span class="avatar" id="viewIcon"></span>
+          <div class="bar-text">
+            <div class="bar-title" id="viewTitle"></div>
+            <div class="bar-sub" id="viewSub"></div>
+          </div>
+          <span class="pill" id="viewStatus"></span>
+          <a class="icon-btn" id="viewOpen" target="_blank" rel="noopener">↗</a>
+        </header>
+        <iframe id="frame" title="mod"></iframe>
+      </section>
+    </main>
+  </div>
+  <script src="/app.js"></script>
+</body>
+</html>

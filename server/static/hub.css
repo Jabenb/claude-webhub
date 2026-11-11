@@ -1,0 +1,54 @@
+/*
+ * The hub's design tokens, for a mod's page that wants to look at home in the hub: link it with
+ * <link rel="stylesheet" href="/hub.css">. Nothing here styles an element: a page stays its own.
+ * hub.js keeps `data-theme` on <html> in step with the theme chosen in the hub.
+ */
+:root {
+  color-scheme: light dark;
+  --hub-bg: #f7f5f0;
+  --hub-surface: #ffffff;
+  --hub-raised: #fbfaf7;
+  --hub-line: #e6e2d8;
+  --hub-text: #1d1c19;
+  --hub-dim: #76726a;
+  --hub-accent: #c8643c;
+  --hub-accent-soft: #f6e4da;
+  --hub-ok: #2f9e62;
+  --hub-warn: #c98a1b;
+  --hub-danger: #c9483f;
+  --hub-info: #3f7fd0;
+  --hub-radius: 14px;
+  --hub-shadow: 0 1px 2px rgb(30 25 15 / 6%), 0 8px 24px rgb(30 25 15 / 6%);
+  --hub-font: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --hub-bg: #171614;
+    --hub-surface: #211f1c;
+    --hub-raised: #292723;
+    --hub-line: #38352f;
+    --hub-text: #ece9e1;
+    --hub-dim: #9b968b;
+    --hub-accent: #e07f55;
+    --hub-accent-soft: #3a2a21;
+    --hub-shadow: 0 1px 2px rgb(0 0 0 / 30%), 0 8px 24px rgb(0 0 0 / 28%);
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --hub-bg: #171614;
+  --hub-surface: #211f1c;
+  --hub-raised: #292723;
+  --hub-line: #38352f;
+  --hub-text: #ece9e1;
+  --hub-dim: #9b968b;
+  --hub-accent: #e07f55;
+  --hub-accent-soft: #3a2a21;
+  --hub-shadow: 0 1px 2px rgb(0 0 0 / 30%), 0 8px 24px rgb(0 0 0 / 28%);
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+}

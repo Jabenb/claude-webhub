@@ -1,0 +1,11 @@
+{
+  "name": "claude-webhub",
+  "owner": { "name": "jabenb" },
+  "plugins": [
+    {
+      "name": "webhub",
+      "source": "./",
+      "description": "Hub for mods with a browser page: hosts every mod's own page and lists them by session"
+    }
+  ]
+}

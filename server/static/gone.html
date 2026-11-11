@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Claude Hub</title>
+  <link rel="stylesheet" href="/hub.css">
+  <style>
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: var(--hub-bg); color: var(--hub-dim); font: 15px/1.5 var(--hub-font); text-align: center; }
+    b { display: block; color: var(--hub-text); font-size: 18px; margin-bottom: 6px; }
+    a { color: var(--hub-accent); }
+  </style>
+</head>
+<body>
+  <div><b id="title"></b><span id="text"></span><p><a href="/" target="_top" id="back"></a></p></div>
+  <script>
+    const TEXTS = {
+      en: ['This page is gone', 'Its session ended and the page was removed, or the mod has not opened it yet.', 'All pages'],
+      ru: ['Этой страницы уже нет', 'Сессия завершилась и страницу убрали, или мод её ещё не открыл.', 'Все страницы'],
+      uk: ['Цієї сторінки вже немає', 'Сесія завершилась і сторінку прибрали, або мод її ще не відкрив.', 'Усі сторінки'],
+    }
+    let lang = 'en'
+    try { lang = localStorage.getItem('webhub.lang') ?? navigator.language.slice(0, 2) } catch { lang = 'en' }
+    const [title, text, back] = TEXTS[lang] ?? TEXTS.en
+    try { document.documentElement.dataset.theme = localStorage.getItem('webhub.theme') ?? 'auto' } catch { /* stays auto */ }
+    document.getElementById('title').textContent = title
+    document.getElementById('text').textContent = text
+    document.getElementById('back').textContent = back
+  </script>
+</body>
+</html>

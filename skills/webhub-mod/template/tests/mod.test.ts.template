@@ -1,0 +1,83 @@
+import { expect, mock, test } from 'claude-code/testing'
+import type { TestBody } from 'claude-code/testing'
+
+import { messageOf, stateOf } from '../hooks/register'
+
+type On = Parameters<TestBody>[1]
+type Held = { pages: number; pushed: unknown[]; queue: Array<{ data: unknown[]; isRegistered?: boolean }>; submitted: string[] }
+
+/** The hub's noun and the engine's events this mod uses, held in memory: `queue` is what each pull hands over. */
+const world = (on: On): Held => {
+  const held: Held = { pages: 0, pushed: [], queue: [], submitted: [] }
+  on('engine.create', async (_, e, next) => ({
+    ...(await next(e)),
+    webhub: {
+      page: async () => {
+        held.pages += 1
+
+        return { isUp: true, url: 'http://localhost:7777/#/s/my-mod' }
+      },
+      push: async ({ state }: { state: unknown }) => {
+        held.pushed.push(state)
+
+        return { isUp: true }
+      },
+      read: async () => ({ isUp: true, state: null }),
+      pull: async () => {
+        const next = held.queue.shift() ?? { data: [] }
+
+        return { isUp: true, isStale: false, isRegistered: next.isRegistered ?? true, actions: next.data.map((data, index) => ({ id: index + 1, at: 0, data })) }
+      },
+    },
+  }))
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+  on('tool.register', (_, e) => ({ value: { tool: `mcp__my-mod__${e.name}` } }))
+  on('prompt.submit', (_, e) => {
+    held.submitted.push(e.text)
+
+    return { text: e.text }
+  })
+
+  return held
+}
+
+const START = { cwd: '/w', surface: 'desktop', isInteractive: true } as const
+const SHOW = { tool: 'mcp__my-mod__show', title: 'Release', items: [{ text: 'Tag v1' }, { text: ' ' }, { text: 'Write notes' }] } as never
+
+test('the tool input becomes the page state, blank lines dropped', async () => {
+  expect(stateOf({ title: 'Release', items: [{ text: 'Tag v1' }, { text: ' ' }, { text: 'Write notes' }] })).toEqual({ title: 'Release', items: [{ id: 1, text: 'Tag v1' }, { id: 2, text: 'Write notes' }] })
+})
+
+test('a press on the page becomes a message with the picked lines and the comment; anything else sends nothing', async () => {
+  const state = stateOf({ title: 'Release', items: [{ text: 'Tag v1' }, { text: 'Write notes' }] })
+
+  expect(messageOf(state, { type: 'send', picked: [2], text: ' tomorrow ' })).toBe('From the page «Release», picked:\n- [2] Write notes\n\ntomorrow')
+  expect(messageOf(state, { type: 'send', picked: [], text: '' })).toBe('')
+  expect(messageOf(state, { type: 'other' })).toBe('')
+})
+
+test('the page is put in the hub at the start, filled by the tool, and its press reaches Claude', async ($, on) => {
+  const held = world(on)
+  const clock = mock.clock(on, { now: 1_000_000 })
+  await $.session.start(START)
+  expect(held.pages).toBe(1)
+
+  await $.tool.call(SHOW)
+  expect(held.pushed.at(-1)).toEqual({ title: 'Release', items: [{ id: 1, text: 'Tag v1' }, { id: 2, text: 'Write notes' }] })
+
+  held.queue.push({ data: [{ type: 'send', picked: [1], text: '' }] })
+  await clock.advance(1000)
+  expect(held.submitted).toEqual(['From the page «Release», picked:\n- [1] Tag v1'])
+})
+
+test('a page the hub lost is put back with its state', async ($, on) => {
+  const held = world(on)
+  const clock = mock.clock(on, { now: 1_000_000 })
+  await $.session.start(START)
+  await $.tool.call(SHOW)
+
+  held.queue.push({ data: [], isRegistered: false })
+  await clock.advance(1000)
+  expect(held.pages).toBe(3)
+  expect(held.pushed.at(-1)).toEqual({ title: 'Release', items: [{ id: 1, text: 'Tag v1' }, { id: 2, text: 'Write notes' }] })
+})

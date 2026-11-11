@@ -1,0 +1,23 @@
+{
+  "name": "webhub",
+  "version": "0.1.0",
+  "description": "Hub for mods with a browser page: one local server that hosts every mod's own page, lists them by session and passes what you press there back to the mod",
+  "author": { "name": "jabenb" },
+  "license": "MIT",
+  "keywords": ["hub", "browser", "pages", "mod"],
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "port": {
+      "type": "string",
+      "title": "Port",
+      "description": "Local port of the hub server (it listens on 127.0.0.1 only).",
+      "default": "7777"
+    },
+    "publicUrl": {
+      "type": "string",
+      "title": "Address in your browser",
+      "description": "Where your browser reaches the hub, when it differs from http://localhost:<port> (an SSH forward to another port, a tunnel). Empty: http://localhost:<port>.",
+      "default": ""
+    }
+  }
+}
