@@ -3,5 +3,5 @@
   "version": "0.1.0",
   "description": "A mod with its own browser page in the webhub hub",
   "license": "MIT",
-  "dependencies": ["webhub"]
+  "dependencies": ["webhub@claude-webhub"]
 }

@@ -42,7 +42,7 @@ On the page, show where a press will go: `hub.onSessions` lists the listening se
 
 ### Mod side (`$.webhub`, typed by `webhub`'s own contract)
 
-`.claude-plugin/plugin.json` has `"dependencies": ["webhub"]`: the engine then loads the hub first and lays its types for the mod (`.claude-plugin/types/webhub`).
+`.claude-plugin/plugin.json` has `"dependencies": ["webhub@claude-webhub"]`: the engine then loads the hub first and lays its types for the mod (`.claude-plugin/types/webhub`). Name the hub with its marketplace: a bare `"webhub"` is looked up in the mod's own marketplace, so an install from there fails with `dependency "webhub@<your marketplace>" was not installed`. Loaded from a folder (`--plugin-dir`, `CLAUDE_CODE_PLUGIN_DIRS`), both spellings work.
 
 | Call | What it does |
 | --- | --- |
@@ -92,4 +92,8 @@ The page shows inside the hub's frame; never link back to the hub's home from it
 
 ## Shipping
 
-The mod is an ordinary plugin: its own repository with `.claude-plugin/marketplace.json`, installed with `/plugin`. It works only where `webhub` is installed too (globally or in the same project).
+The mod is an ordinary plugin: its own repository with `.claude-plugin/marketplace.json`, installed with `/plugin`. It works only where `webhub` is installed too (globally or in the same project). The hub comes from another marketplace, so the mod's `marketplace.json` must allow it at its top level, or the install refuses the dependency:
+
+```json
+"allowCrossMarketplaceDependenciesOn": ["claude-webhub"]
+```
