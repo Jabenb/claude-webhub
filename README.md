@@ -79,7 +79,7 @@ Set at install, or later under `/plugin`:
 
 The plugin ships the `webhub-mod` skill with a ready template mod: ask Claude "make a mod for the hub that …" and it starts from the template. In short:
 
-- The mod names `"dependencies": ["webhub"]` in its `plugin.json` and gets `$.webhub`: `page` (register its page), `push` (send the page its state), `read` (get it back), `pull` (take the presses made on the page).
+- The mod names `"dependencies": ["webhub@claude-webhub"]` in its `plugin.json` (and `"allowCrossMarketplaceDependenciesOn": ["claude-webhub"]` in its `marketplace.json`) and gets `$.webhub`: `page` (register its page), `push` (send the page its state), `read` (get it back), `pull` (take the presses made on the page).
 - The page is the mod's own whole HTML. It loads `/hub.js` for `window.hub` (`onState`, `send`, `onDelivered`, `onSessions`, `lang`, `theme`) and, if it likes, `/hub.css` for the hub's colours in both themes.
 - `scope: 'project'` makes the page shared by the project's sessions; without it the page belongs to the session.
 
