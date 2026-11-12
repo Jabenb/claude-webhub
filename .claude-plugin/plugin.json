@@ -1,6 +1,6 @@
 {
   "name": "webhub",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Hub for mods with a browser page: one local server that hosts every mod's own page, lists them by session and passes what you press there back to the mod",
   "author": { "name": "jabenb" },
   "license": "MIT",
