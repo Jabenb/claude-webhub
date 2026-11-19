@@ -21,14 +21,15 @@ Load the `plugin-authoring` skill too: it says where a mod's files go, how hot r
 
 Keep the template's skeleton: the listening loop, the re-registration when the hub lost the page, the `LISTENER` id. They are the parts that are easy to get wrong.
 
-## Session page or project page
+## Session page, project page or machine page
 
 Decide first whom the page belongs to, and pass that `scope` to **every** `$.webhub` call for it (a call without one means the session's page):
 
 - `scope: 'session'` (the default): one page per session, listed in the hub under the session's name. For what lives and dies with one conversation: questions Claude asked, a review of this session's diff, a board of this task.
 - `scope: 'project'`: one page for the project (the session's git root, else its folder), listed under **Projects**. Every session of that project that has the mod listens to the same page; any of them may `push` to it. For what belongs to the codebase, not to a chat: a test runner, a migrations or queue monitor, a deploy panel.
+- `scope: 'global'`: one page for the whole machine, listed first, under **Whole machine**. Every session that has the mod listens to it, whatever its project; presses go as on a project page. For what spans every project: a browser of all sessions, a machine-wide monitor.
 
-Where a press on a project page goes:
+Where a press on a project or machine page goes:
 
 - With no address, to the **active** session: the live one the person wrote in last (the hub learns that from every prompt the person sends; a message a mod submits counts too). A press made while no session lives waits and goes to the first one that listens.
 - `hub.send(data, { to: sessionId })` sends it to that session alone, e.g. to the session that started a test run when the press asks Claude about that run. For that the mod puts its own `await $.session.id()` into the state (`owner` of the run), and the page uses it as `to`.

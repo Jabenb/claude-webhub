@@ -8,7 +8,7 @@ The hub is the base the mods plug into. It runs one small local server, hosts ev
 
 ## What you get
 
-- **One address for all mods.** `http://localhost:7777` lists every page your mods opened, grouped under **Projects**, **Live** and **Ended** sessions, with search, badges for what waits for you, and links that open a page in its own tab.
+- **One address for all mods.** `http://localhost:7777` lists every page your mods opened, grouped under **Whole machine**, **Projects**, **Live** and **Ended** sessions, with search, badges for what waits for you, and links that open a page in its own tab.
 - **Session pages and project pages.** A session page belongs to one chat (questions Claude asked, a board for this task). A project page is shared by every session of the same git repository (a test runner, a monitor): a press goes to the session you wrote in last, or to the session the page names.
 - **Live and reliable.** State reaches every open tab at once; a press is kept until the mod confirms it, and the page shows **Delivered**. Pages and their state survive a restart of the hub and of Claude.
 - **Three languages and two themes.** English, Russian and Ukrainian; light, dark or as the system. Mod pages follow the choice.
@@ -81,7 +81,7 @@ The plugin ships the `webhub-mod` skill with a ready template mod: ask Claude "m
 
 - The mod names `"dependencies": ["webhub@claude-webhub"]` in its `plugin.json` (and `"allowCrossMarketplaceDependenciesOn": ["claude-webhub"]` in its `marketplace.json`) and gets `$.webhub`: `page` (register its page), `push` (send the page its state), `read` (get it back), `pull` (take the presses made on the page).
 - The page is the mod's own whole HTML. It loads `/hub.js` for `window.hub` (`onState`, `send`, `onDelivered`, `onSessions`, `lang`, `theme`) and, if it likes, `/hub.css` for the hub's colours in both themes.
-- `scope: 'project'` makes the page shared by the project's sessions; without it the page belongs to the session.
+- `scope: 'project'` makes the page shared by the project's sessions; `scope: 'global'` makes one page for the whole machine, shared by every session; without a scope the page belongs to the session.
 
 The full contract is in `types/index.d.ts`, `server/static/hub.js` and [`skills/webhub-mod/SKILL.md`](skills/webhub-mod/SKILL.md).
 
