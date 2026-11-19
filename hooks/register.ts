@@ -3,7 +3,7 @@ import type { Register } from 'claude-code'
 import type { Webhub, WebhubAction, WebhubScope } from '../types'
 
 /** What this plugin needs of the server; a running container whose number is lower is replaced. Kept equal to `API` in server/server.mjs. */
-export const SERVER_API = 4
+export const SERVER_API = 5
 const CONTAINER = 'claude-webhub'
 const IMAGE = 'node:20-alpine'
 const COMMAND = 'hub'
@@ -165,9 +165,11 @@ export const register: Register = (on, options) => {
       return me
     }
 
-    /** Which page of `mod` a call means, as the server's requests name it: the session's own, or its project's. */
+    /** Which page of `mod` a call means, as the server's requests name it: the session's own, its project's, or the machine's one. */
     const placeOf = (who: typeof me, mod: string, scope: WebhubScope | undefined): Record<string, string> =>
-      scope === 'project' ? { mod, session: who.session, scope, project: who.project } : { mod, session: who.session }
+      scope === 'project' ? { mod, session: who.session, scope, project: who.project }
+      : scope === 'global' ? { mod, session: who.session, scope }
+      : { mod, session: who.session }
     const queryOf = (place: Record<string, string>): string => Object.entries(place).map(([name, value]) => `${name}=${encodeURIComponent(value)}`).join('&')
 
     const webhub: Webhub = {

@@ -5,7 +5,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 /** Raised when the mod must replace a running server: the mod restarts a container whose number is lower than its own. */
-const API = 4
+const API = 5
 const PORT = Number(process.env.PORT ?? 7777)
 const DATA = process.env.WEBHUB_DATA ?? '/data'
 const STATIC = path.join(path.dirname(fileURLToPath(import.meta.url)), 'static')
@@ -18,6 +18,7 @@ const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/cs
 /**
  * key "mod/place" -> page. A page's place is its session's id, or for a page of a whole project the project's key
  * (`prj-` and a hash of its root): every session of that project listens to it and the person's presses go to one.
+ * A page of the whole machine is placed at `global`: every session of the mod listens to it, as to a project page.
  */
 const pages = new Map()
 /** session id -> { title, label, seenAt, activeAt } */
@@ -31,6 +32,13 @@ const fileOf = page => path.join(DATA, 'pages', `${encodeURIComponent(page.mod)}
 const isName = value => typeof value === 'string' && /^[A-Za-z0-9._-]{1,80}$/.test(value)
 const projectKeyOf = root => `prj-${crypto.createHash('sha1').update(root).digest('hex').slice(0, 12)}`
 const labelOf = root => root.split('/').filter(part => part !== '').slice(-2).join('/')
+const GLOBAL = 'global'
+const SCOPES = ['session', 'project', 'global']
+/** Whether a page is shared by several sessions: a project's or the machine's. */
+const isShared = page => page.scope !== 'session'
+/** The place of the page a request names, without making it. */
+const placeKeyOf = ({ session, scope, project }) =>
+  scope === 'global' ? GLOBAL : scope === 'project' && typeof project === 'string' ? projectKeyOf(project) : session
 
 const blank = (mod, place) => ({
   mod, session: place, scope: 'session', root: '', label: '', title: mod, icon: '', html: '', state: null, badge: 0, actions: [], updatedAt: Date.now(),
@@ -51,8 +59,15 @@ const pageOf = (mod, place) => {
   return pages.get(key)
 }
 
-/** The page a mod's request names: its session's own, or with `scope: 'project'` the one of the project at `project` (an absolute path). */
+/**
+ * The page a mod's request names: its session's own, with `scope: 'project'` the one of the project at `project` (an
+ * absolute path), with `scope: 'global'` the machine's one.
+ */
 const placedOf = ({ mod, session, scope, project }) => {
+  if (scope === 'global') {
+    return Object.assign(pageOf(mod, GLOBAL), { scope: 'global', root: '', label: '' })
+  }
+
   if (scope !== 'project') {
     return pageOf(mod, session)
   }
@@ -122,7 +137,7 @@ const load = () => {
       }
 
       const page = Object.assign(pageOf(held.mod, held.session), {
-        scope: held.scope === 'project' ? 'project' : 'session', root: held.root ?? '', label: held.label ?? '',
+        scope: SCOPES.includes(held.scope) ? held.scope : 'session', root: held.root ?? '', label: held.label ?? '',
         title: held.title, icon: held.icon ?? '', html: held.html ?? '', state: held.state ?? null, badge: held.badge ?? 0, updatedAt: held.updatedAt ?? 0,
         /** A page saved by the server before API 4 marked a handed action `isHanded`: handed to its own session. */
         actions: (held.actions ?? []).map(action => (action.isHanded === true && action.handedTo === undefined ? { ...action, handedTo: held.session } : action)),
@@ -177,7 +192,10 @@ const sessionsOf = page => {
   }).sort((a, b) => Number(b.isLive) - Number(a.isLive) || b.activeAt - a.activeAt)
 }
 
-/** Every session with its pages, and every project with its: projects, then live sessions, then the most recently used. */
+/**
+ * Every session with its pages, every project with its, and the machine's pages: the machine's first, then projects,
+ * then live sessions, then the most recently used.
+ */
 const summary = () => {
   const byPlace = new Map()
 
@@ -186,7 +204,7 @@ const summary = () => {
       continue
     }
 
-    const isProject = page.scope === 'project'
+    const isProject = isShared(page)
     const known = sessionOf(page.session)
     const entry = byPlace.get(page.session) ?? {
       id: page.session, kind: page.scope, title: isProject ? page.label : known.title, label: isProject ? page.root : known.label, online: false, updatedAt: 0, pages: [], sessions: [],
@@ -206,7 +224,7 @@ const summary = () => {
 
   return [...byPlace.values()]
     .map(entry => ({ ...entry, pages: entry.pages.sort((a, b) => a.mod.localeCompare(b.mod)) }))
-    .sort((a, b) => Number(b.kind === 'project') - Number(a.kind === 'project') || Number(b.online) - Number(a.online) || b.updatedAt - a.updatedAt)
+    .sort((a, b) => Number(b.kind === 'global') - Number(a.kind === 'global') || Number(b.kind === 'project') - Number(a.kind === 'project') || Number(b.online) - Number(a.online) || b.updatedAt - a.updatedAt)
 }
 
 const sse = (res, event, data) => res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
@@ -234,8 +252,8 @@ const broadcastSessions = page => {
 const metaOf = page => {
   const known = sessionOf(page.session)
 
-  return page.scope === 'project'
-    ? { title: page.title, scope: 'project', sessionTitle: page.label, label: page.root }
+  return page.scope === 'global' ? { title: page.title, scope: 'global', sessionTitle: '', label: '' }
+    : page.scope === 'project' ? { title: page.title, scope: 'project', sessionTitle: page.label, label: page.root }
     : { title: page.title, scope: 'session', sessionTitle: known.title, label: known.label }
 }
 
@@ -438,8 +456,7 @@ const server = http.createServer(async (req, res) => {
 
       if (url.pathname === '/api/state') {
         const params = paramsOf(url)
-        const place = params.scope === 'project' && typeof params.project === 'string' ? projectKeyOf(params.project) : params.session
-        const page = pages.get(keyOf(params.mod, place))
+        const page = pages.get(keyOf(params.mod, placeKeyOf(params)))
 
         return json(res, 200, { state: page?.state ?? null })
       }

@@ -140,3 +140,33 @@ test('what the person writes marks the session as the one a project page talks t
 
   expect(held.requests.filter(request => request.path === '/api/activity').map(request => request.body)).toEqual([{ session: SESSION }])
 })
+
+/** A mod of the machine's page: one page for every session and project. */
+const GLOBAL_MOD = {
+  name: 'sessions-browser',
+  register: ((on: On) => {
+    on('session.start', async ($, e, next) => {
+      const result = await next(e)
+      await $.webhub.page({ mod: 'sessions', scope: 'global', title: 'Sessions', html: '<p>s</p>' })
+      await $.webhub.push({ mod: 'sessions', scope: 'global', state: { n: 2 } })
+      await $.webhub.read({ mod: 'sessions', scope: 'global' })
+      await $.webhub.pull({ mod: 'sessions', scope: 'global', listener: 'L', isFirst: true, waitMs: 0 })
+
+      return result
+    })
+  }) as never,
+}
+
+test('a page of the whole machine names no project, and its presses are pulled and acknowledged there', { plugins: [GLOBAL_MOD] }, async (engine, on) => {
+  const held = world(on, { actions: [{ id: 9, at: 0, data: { type: 'search' } }] })
+  session(on)
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+  await engine.session.start(START)
+  const place = { mod: 'sessions', session: SESSION, scope: 'global' }
+
+  expect(held.requests.find(request => request.path === '/api/page')?.body).toMatchObject({ ...place, title: 'Sessions' })
+  expect(held.requests.find(request => request.path === '/api/state' && request.method === 'POST')?.body).toEqual({ ...place, state: { n: 2 } })
+  expect(held.requests.find(request => request.path.startsWith('/api/state?'))?.path).toBe(`/api/state?mod=sessions&session=${SESSION}&scope=global`)
+  expect(held.requests.find(request => request.path.startsWith('/api/pull'))?.path).toMatch(/^\/api\/pull\?mod=sessions&session=aaaa[^&]+&scope=global&listener=L&first=1&ack=0&wait=0$/)
+  expect(held.requests.find(request => request.path === '/api/ack')?.body).toEqual({ ...place, ack: 9 })
+})

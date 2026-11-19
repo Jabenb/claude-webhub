@@ -6,7 +6,7 @@
       emptyText: 'A mod that uses the hub shows up here as soon as its session starts.', nothingFound: 'Nothing matches the search.',
       online: 'session connected', offline: 'session ended', remove: 'Remove', removeConfirm: 'Remove the pages of this ended session?', untitled: 'Untitled session',
       open: 'Open in a new tab', hubDown: 'No connection to the hub', hubUp: 'Connected to the hub', themeAuto: 'Theme: system', themeLight: 'Theme: light', themeDark: 'Theme: dark',
-      queued: 'waiting for delivery', menu: 'Menu', projects: 'Projects', goesTo: 'presses go to', noListener: 'no live session', projectEnded: 'no session listens', sessionsLive: 'live sessions',
+      queued: 'waiting for delivery', menu: 'Menu', projects: 'Projects', global: 'Whole machine', goesTo: 'presses go to', noListener: 'no live session', projectEnded: 'no session listens', sessionsLive: 'live sessions',
     },
     ru: {
       search: 'Найти сессию или мод…', live: 'Активные', ended: 'Завершённые', heroTitle: 'Твои моды', heroSub: 'Все страницы, которые открыли моды Claude, по сессиям. Обновляется вживую.',
@@ -14,7 +14,7 @@
       emptyText: 'Мод, который работает через хаб, появится здесь, как только стартует его сессия.', nothingFound: 'По запросу ничего не найдено.',
       online: 'сессия на связи', offline: 'сессия завершена', remove: 'Убрать', removeConfirm: 'Убрать страницы этой завершённой сессии?', untitled: 'Сессия без названия',
       open: 'Открыть в новой вкладке', hubDown: 'Нет связи с хабом', hubUp: 'Хаб на связи', themeAuto: 'Тема: как в системе', themeLight: 'Тема: светлая', themeDark: 'Тема: тёмная',
-      queued: 'ждёт доставки', menu: 'Меню', projects: 'Проекты', goesTo: 'нажатия идут в', noListener: 'нет живой сессии', projectEnded: 'ни одна сессия не слушает', sessionsLive: 'живых сессий',
+      queued: 'ждёт доставки', menu: 'Меню', projects: 'Проекты', global: 'Вся машина', goesTo: 'нажатия идут в', noListener: 'нет живой сессии', projectEnded: 'ни одна сессия не слушает', sessionsLive: 'живых сессий',
     },
     uk: {
       search: 'Знайти сесію або мод…', live: 'Активні', ended: 'Завершені', heroTitle: 'Твої моди', heroSub: 'Усі сторінки, які відкрили моди Claude, за сесіями. Оновлюється наживо.',
@@ -22,7 +22,7 @@
       emptyText: 'Мод, який працює через хаб, зʼявиться тут, щойно стартує його сесія.', nothingFound: 'За запитом нічого не знайдено.',
       online: 'сесія на звʼязку', offline: 'сесію завершено', remove: 'Прибрати', removeConfirm: 'Прибрати сторінки цієї завершеної сесії?', untitled: 'Сесія без назви',
       open: 'Відкрити в новій вкладці', hubDown: 'Немає звʼязку з хабом', hubUp: 'Хаб на звʼязку', themeAuto: 'Тема: як у системі', themeLight: 'Тема: світла', themeDark: 'Тема: темна',
-      queued: 'чекає доставки', menu: 'Меню', projects: 'Проєкти', goesTo: 'натискання йдуть у', noListener: 'немає живої сесії', projectEnded: 'жодна сесія не слухає', sessionsLive: 'живих сесій',
+      queued: 'чекає доставки', menu: 'Меню', projects: 'Проєкти', global: 'Уся машина', goesTo: 'натискання йдуть у', noListener: 'немає живої сесії', projectEnded: 'жодна сесія не слухає', sessionsLive: 'живих сесій',
     },
   }
   const LANGS = Object.keys(TEXTS)
@@ -51,13 +51,14 @@
 
   const tintOf = name => TINTS[[...name].reduce((sum, ch) => (sum * 31 + ch.codePointAt(0)) % 9973, 7) % TINTS.length]
   const avatar = (page, cls = '') => '<span class="avatar ' + cls + '" style="--tint:' + tintOf(page.mod) + '">' + esc(page.icon || page.title.trim().charAt(0).toUpperCase() || '•') + '</span>'
-  const nameOf = session => session.title || session.label || t('untitled')
+  const nameOf = session => session.kind === 'global' ? t('global') : session.title || session.label || t('untitled')
   const ago = at => {
     const minutes = Math.round((at - Date.now()) / 60000)
     const format = new Intl.RelativeTimeFormat(lang, { numeric: 'auto' })
     return Math.abs(minutes) < 60 ? format.format(minutes, 'minute') : Math.abs(minutes) < 1440 ? format.format(Math.round(minutes / 60), 'hour') : format.format(Math.round(minutes / 1440), 'day')
   }
-  const isProject = entry => entry.kind === 'project'
+  /** A page shared by several sessions: a project's or the whole machine's. */
+  const isProject = entry => entry.kind === 'project' || entry.kind === 'global'
   const activeOf = entry => (entry.sessions ?? []).find(one => one.isActive)
   /** A project's line: where its presses go now and how many sessions listen; a session's: its folder, id and age. */
   const subOf = entry => isProject(entry)
@@ -66,7 +67,8 @@
       : [t('noListener'), ago(entry.updatedAt)].join(' · '))
     : [entry.title ? entry.label : '', entry.id.slice(0, 8), entry.online ? '' : ago(entry.updatedAt)].filter(Boolean).join(' · ')
   const groupsOf = list => [
-    [t('projects'), list.filter(isProject)],
+    [t('global'), list.filter(entry => entry.kind === 'global')],
+    [t('projects'), list.filter(entry => entry.kind === 'project')],
     [t('live'), list.filter(entry => !isProject(entry) && entry.online)],
     [t('ended'), list.filter(entry => !isProject(entry) && !entry.online)],
   ]
@@ -133,7 +135,7 @@
     const src = '/p/' + encodeURIComponent(page.mod) + '/' + encodeURIComponent(session.id)
     el('viewIcon').outerHTML = avatar(page).replace('<span class="avatar ', '<span id="viewIcon" class="avatar ')
     el('viewTitle').textContent = page.title
-    el('viewSub').textContent = isProject(session) ? [session.title, subOf(session)].join(' · ') : [nameOf(session), session.title ? session.label : ''].filter(Boolean).join(' · ')
+    el('viewSub').textContent = isProject(session) ? [nameOf(session), subOf(session)].join(' · ') : [nameOf(session), session.title ? session.label : ''].filter(Boolean).join(' · ')
     el('viewStatus').textContent = session.online ? t('online') : isProject(session) ? t('projectEnded') : t('offline')
     el('viewStatus').className = 'pill' + (page.online ? ' on' : '')
     el('viewOpen').href = src

@@ -9,12 +9,14 @@ export type WebhubAction = {
  * Whom a page belongs to. `session` (the default): this session alone, listed under its name. `project`: the project the
  * session runs in (its git root, else its folder); every session of the project with the mod listens to the one page,
  * and a press goes to the session the page sends it to, by default the live one the person wrote in last.
+ * `global`: one page for the whole machine, whatever the session or project: every session with the mod listens to it,
+ * presses go as on a project page. For what spans every project (a browser of all sessions, a machine-wide monitor).
  * Pass the same scope to every call for the page: a call without one means the session's own page.
  */
-export type WebhubScope = 'session' | 'project'
+export type WebhubScope = 'session' | 'project' | 'global'
 
 export type WebhubPageArgs = {
-  /** The calling mod's name (letters, digits, `.`, `_`, `-`): the page's address is `/p/<mod>/<session or project key>`. */
+  /** The calling mod's name (letters, digits, `.`, `_`, `-`): the page's address is `/p/<mod>/<session or project key>`, or `/p/<mod>/global`. */
   mod: string
   scope?: WebhubScope
   /** The page's name in the hub's list. */
